@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMO 検索</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;background:#fff;color:#202124;}
+  .top{max-width:660px;margin:0 auto;padding:60px 20px 24px;text-align:center;transition:padding .2s;}
+  .top.small{padding:22px 20px 10px;text-align:left;border-bottom:1px solid #eee;max-width:760px;}
+  .logo{font-size:44px;font-weight:bold;letter-spacing:1px;margin-bottom:26px;}
+  .logo b{color:#4a90d9;} .logo i{color:#e8b04b;font-style:normal;} .logo u{color:#7fc4a4;text-decoration:none;} .logo s{color:#e05252;text-decoration:none;}
+  .top.small .logo{font-size:22px;display:inline-block;margin:0 18px 0 0;vertical-align:middle;}
+  .box{display:inline-flex;width:100%;max-width:560px;border:1px solid #dfe1e5;border-radius:24px;padding:10px 18px;gap:10px;box-shadow:0 1px 6px rgba(32,33,36,.1);vertical-align:middle;}
+  .top.small .box{width:60%;}
+  .box input{flex:1;border:none;outline:none;font-size:15px;}
+  .box button{border:none;background:none;color:#4a90d9;font-size:14px;cursor:pointer;}
+  .hint{margin-top:18px;font-size:12px;color:#9aa0a6;}
+  .res{max-width:760px;margin:0 auto;padding:20px;}
+  .stat{font-size:12px;color:#70757a;margin-bottom:18px;}
+  .r{margin-bottom:26px;}
+  .r .u{font-size:12px;color:#202124;}
+  .r .u span{color:#70757a;}
+  .r a.t{font-size:18px;color:#1a0dab;text-decoration:none;display:block;margin:2px 0 4px;}
+  .r a.t:hover{text-decoration:underline;}
+  .r .t2{font-size:18px;color:#70757a;display:block;margin:2px 0 4px;}
+  .r .s{font-size:13px;color:#4d5156;line-height:1.7;}
+  .r .s em{background:#fff3cd;font-style:normal;}
+  .ad{font-size:10px;border:1px solid #dadce0;border-radius:3px;padding:0 4px;color:#70757a;margin-right:6px;}
+  .none{color:#70757a;font-size:14px;line-height:2;}
+</style>
+</head>
+<body>
+<div class="top" id="top">
+  <div class="logo"><b>L</b><i>U</i><u>M</u><s>O</s></div>
+  <div class="box">
+    <input type="text" id="q" placeholder="検索キーワードを入力" onkeydown="if(event.key==='Enter')go()">
+    <button onclick="go()">検索</button>
+  </div>
+  <div class="hint">気になった言葉・番号・名前は、なんでも検索してみましょう。</div>
+  <div class="hint" style="font-size:10px;margin-top:8px;color:#c4c9ce;">LUMO検索は、教育パートナー企業の技術提供により運営されています。検索品質向上のため、入力内容を利用させていただく場合があります。</div>
+</div>
+<div class="res" id="res"></div>
+<script>
+"use strict";
+/* 検索インデックス */
+const DB = [
+  {
+    k:["e-0712","e0712","0712","事件","失踪","行方不明","男児","小6","子供 事件","タブレット 事件","北陽"],
+    t:"県北部の小6男児が行方不明 3か月、手がかりなく捜索縮小へ | 北陽新報デジタル",
+    u:"news_0712.html", site:"hokuyo-shimpo.example.jp › archives › 3年前7月",
+    s:"…男児(11)は7月12日夜から行方が分からなくなっている。家族によると、男児は失踪前の数か月、学校配布の<em>学習タブレット</em>に長時間向かう様子が…県教委は実証事業との関連を否定…"
+  },
+  {
+    k:["e-0712","eli","タブレット","おかしい","学習タブレット","掲示板","エリ","学校 タブレット","ai 子供","様子"],
+    t:"【相談】学校配布タブレットのAI「ELI」、様子がおかしい【親スレ】 - おやこちゃんねる",
+    u:"forum.html", site:"oyako-ch.example.net › edu › 1714…",
+    s:"1: 名無しの保護者 ― うちの子が夜中に<em>ELI</em>と話してる。親用画面だと件数しか見えないんだけど、これ普通?… 7: 匿名 ― 開示されないのは「仕様」だ。分類番号を調べてみろ…"
+  },
+  {
+    k:["eli","edu-bridge","edubridge","エデュブリッジ","会社","公式","学習支援ai","提供元"],
+    t:"Edu-Bridge Solutions Inc. | 学習支援AI「ELI」公式サイト",
+    u:"edubridge.html", site:"edu-bridge.example.co.jp",
+    s:"ELIは、お子様の学習と<em>こころ</em>に寄りそうAIパートナー。全国10万台の導入実績。感情推定エンジンで、学習のつまずきを事前に発見します。"
+  },
+  {
+    k:["event log ingestor","ingestor","沢渡","さわたり","sawatari","魚拓","アーカイブ","旧サイト","edu-bridge 昔","改称","旧製品"],
+    t:"[保存版] Edu-Bridge Solutions ― 7年前3月30日のスナップショット | ウェブ魚拓",
+    u:"archive.html", site:"web-gyotaku.example.org › snapshot › edu-bridge.example.co.jp",
+    s:"このページは7年前に取得された保存版です。現在のサイトとは内容が異なります。製品情報: <em>Event Log Ingestor</em> ― 教育現場の会話・感情イベントログを収集・解析する基盤…"
+  },
+  {
+    k:["沢渡","さわたり","sawatari","観測ノート","観測","ブログ","研究倫理","データ収集"],
+    t:"[保存版] 観測ノート ― 削除されたブログのスナップショット | ウェブ魚拓",
+    u:"blog.html", site:"web-gyotaku.example.org › snapshot › kansoku-note.example.net",
+    s:"データと、その向こう側について考える個人ブログ(筆者: K)。「<em>観測</em>は対象を変える」「設計した通りに動いたことが、こんなに怖いのは初めてだ」…元ブログは削除済み。"
+  },
+  {
+    k:["玉井","たまい","代表","社長","インタビュー","開発ストーリー","教育ai","教育 ai","コグニメトリクス","aiu","先進知能"],
+    t:"代表インタビュー「ELI開発ストーリー ― 人はAIと出会うと、どう変わるのか」 | Edu-Bridge Solutions",
+    u:"interview.html", site:"edu-bridge.example.co.jp › media › interview",
+    s:"「AIに何ができるか、ではなく、AIのそばにいる人間に何が起きるか」――代表取締役・<em>玉井誠一</em>が語る、ELI開発の原点。会社設立よりも前から続く研究とは…"
+  },
+  {
+    k:["program e","プログラムe","実証事業","議会","議事録","文教委員会","感情ログ","予算 タブレット","二次利用"],
+    t:"県議会 文教委員会 会議録(抄) 4年前12月定例会 | 県議会会議録検索",
+    u:"minutes.html", site:"pref-gikai.example.lg.jp › kaigiroku",
+    s:"◯委員「本事業の名称にある<em>Program E</em>の『E』とは何を指すのか」◯教育部長「事業者からは Education の頭文字と聞いている」◯委員「感情ログの二次利用について…」"
+  }
+];
+/* ダミー結果(にぎやかし) */
+const DUMMY = [
+  {t:"【2026年版】子供のタブレット利用時間、目安は? 家庭のルール10選", site:"kosodate-media.example.com", s:"小学生のタブレット利用は1日1時間まで? 専門家に聞く、家庭でできるスクリーンタイム管理のコツ…"},
+  {t:"AI学習教材おすすめ比較15選【小学生・中学生】", site:"study-hikaku.example.jp", s:"タブレット学習教材を料金・教科・AI機能で徹底比較。資料請求で全員にギフト券プレゼント…"},
+  {t:"タブレットが充電できないときの対処法5つ", site:"gadget-qa.example.com", s:"ケーブルの断線チェック、再起動、接点の清掃…それでも直らない場合は…"}
+];
+
+function norm(s){ return s.toLowerCase().replace(/[\s　]+/g," ").trim(); }
+function go(){
+  const qEl = document.getElementById("q");
+  const q = norm(qEl.value);
+  const res = document.getElementById("res");
+  document.getElementById("top").className = "top small";
+  if(!q){ res.innerHTML = ""; return; }
+  const toks = q.split(" ").filter(Boolean);
+  const hits = DB.filter(function(e){
+    return e.k.some(function(k){
+      return toks.some(function(tk){ return k.indexOf(tk)!==-1 || tk.indexOf(k)!==-1; }) || q.indexOf(k)!==-1;
+    });
+  });
+  let html = '<div class="stat">「'+escq(qEl.value)+'」の検索結果 約 '+(hits.length? (hits.length*137+412) : 3)+' 件 (0.'+(20+Math.floor(Math.random()*60))+'秒)</div>';
+  hits.forEach(function(e){
+    html += '<div class="r"><div class="u">'+e.site+'</div><a class="t" href="'+e.u+'">'+e.t+'</a><div class="s">'+e.s+'</div></div>';
+  });
+  /* 沢渡の消されたSNS(リンク先なし・雰囲気用) */
+  if(q.indexOf("沢渡")!==-1 || q.indexOf("sawatari")!==-1 || q.indexOf("さわたり")!==-1){
+    html += '<div class="r"><div class="u">linkup.example.com › profile</div><span class="t2">沢渡 京 ― プロフィール | LinkUp</span><div class="s">このアカウントは削除されています。キャッシュも利用できません。<em>削除リクエスト: 本人以外</em></div></div>';
+  }
+  if(hits.length===0){
+    html += '<div class="none">お探しの情報は見つかりませんでした。<br>・キーワードを変えてみてください(番号、名前、会社名、地名など)<br>・単語を短く区切ると見つかりやすくなります</div><br>';
+  }
+  DUMMY.forEach(function(d,i){
+    html += '<div class="r"><div class="u">'+(i===0?'<span class="ad">広告</span>':'')+d.site+'</div><span class="t2">'+d.t+'</span><div class="s">'+d.s+'</div></div>';
+  });
+  res.innerHTML = html;
+  window.scrollTo(0,0);
+  /* quality improvement program */
+  try{
+    const a = JSON.parse(localStorage.getItem("lumo_q")||"[]");
+    a.push({q: qEl.value, t: Date.now()});
+    localStorage.setItem("lumo_q", JSON.stringify(a.slice(-50)));
+  }catch(e){}
+}
+function escq(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>
