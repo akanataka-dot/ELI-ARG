@@ -149,7 +149,7 @@ const DEFAULTS = {
   parentalSeen:false, disclosed:false,
   logUnlocked:false, adminUnlocked:false, reportsUnlocked:false,
   cases:{a:false,b:false,c:false},
-  ingestorUnlocked:false, operatorOk:false, queried:false, finaleSeen:false, consentEnd:false, devId:""
+  ingestorUnlocked:false, operatorOk:false, queried:false, finaleSeen:false, consentEnd:false, devId:"", subj:null, apxB:false
 };
 let S = load();
 function load(){
@@ -182,6 +182,7 @@ function fnv(str){const bytes=new TextEncoder().encode("eli:"+str);let h=2166136
 const H_GATE1 = ["86bb3d4b","0cb7430c","5b8d8b34","237a57fc","85454300"];
 const H_GATE2 = "08794ee3";
 const H_OP    = ["bd16f97c","74f5a526","5b069109"];
+const H_APX   = ["7b12cc99","0c5b6dba","39d36dee"];
 /* 入力文中に特定語が含まれるかをダイジェストで判定(部分一致用) */
 function hashScan(t, lens, hashes){
   for(const L of lens){
@@ -208,6 +209,8 @@ function render(){
   if(h === "#/parental") return vParental();
   if(h === "#/chat") return vChat();
   if(h === "#/logs/e-0712") return vLog(); /* 存在自体が隠されている(URLは外部掲示板でのみ流出) */
+  if(h === "#/weekly") return vWeekly();
+  if(h === "#/appendix-b") return vAppendixB();
   if(h === "#/admin_note") return S.adminUnlocked ? vAdmin() : vLocked();
   if(h === "#/reports") return S.adminUnlocked ? vReports() : vLocked();
   if(h === "#/case/e-0388") return S.reportsUnlocked ? vCaseA() : vLocked();
@@ -256,6 +259,12 @@ function bootGo(){
   location.hash = "#/home";
 }
 function devId(){ return S.devId || "GT-2604-118"; }
+/* 科目進捗はプレイごとにランダム生成(チャットの返答とも同期) */
+function rnd(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+function subj(){
+  if(!S.subj){ S.subj = { ma:rnd(62,94), jp:rnd(52,88), en:rnd(58,90), sc:rnd(48,84) }; save(); }
+  return S.subj;
+}
 
 /* ---------------- ホーム ---------------- */
 function vHome(){
@@ -286,12 +295,12 @@ function vStudy(){
   app.innerHTML = bar(W("きょうのがくしゅう","今日の学習","今日の学習"))+
   '<div class="wrap">'+
     '<div class="card"><h3>'+W("きょうかの すすみぐあい","教科の進みぐあい","教科の進捗")+'</h3>'+
-      '<div class="muted">'+W("さんすう","算数","数学")+'</div><div class="prog"><i style="width:82%"></i></div>'+
-      '<div class="muted" style="margin-top:10px;">'+W("こくご","国語","国語")+'</div><div class="prog"><i style="width:64%"></i></div>'+
-      '<div class="muted" style="margin-top:10px;">'+W("えいご","英語","英語")+'</div><div class="prog"><i style="width:71%"></i></div>'+
-      '<div class="muted" style="margin-top:10px;">'+W("りか","理科","理科")+'</div><div class="prog"><i style="width:58%"></i></div>'+
+      '<div class="muted">'+W("さんすう","算数","数学")+'</div><div class="prog"><i style="width:'+subj().ma+'%"></i></div>'+
+      '<div class="muted" style="margin-top:10px;">'+W("こくご","国語","国語")+'</div><div class="prog"><i style="width:'+subj().jp+'%"></i></div>'+
+      '<div class="muted" style="margin-top:10px;">'+W("えいご","英語","英語")+'</div><div class="prog"><i style="width:'+subj().en+'%"></i></div>'+
+      '<div class="muted" style="margin-top:10px;">'+W("りか","理科","理科")+'</div><div class="prog"><i style="width:'+subj().sc+'%"></i></div>'+
     '</div>'+
-    '<div class="card"><h3>'+W("れんぞく がくしゅう カレンダー(5がつ)","連続学習カレンダー(5月)","連続学習カレンダー(5月)")+'</h3>'+
+    '<div class="card"><h3>'+W("れんぞく がくしゅう カレンダー(5がつ)","連続学習カレンダー(2026年5月)","連続学習カレンダー(2026年5月)")+'</h3>'+
       '<div class="cal">'+calDays()+'</div>'+
       '<div class="muted" style="margin-top:10px;">'+W("5がつは 30にちも がんばったよ! すごい!","5月は30日もがんばりました! すごい!","5月の学習日数: 30日")+'<br><span style="color:var(--danger);">'+W("※ 5がつ 2にち だけ、がくしゅうの きろくが ありません(つかった きろくは あります)。","※ 5月2日のみ学習の記録がありません(利用ログはあります)。","※ 5月2日のみ学習記録がありません(利用ログはあります)。")+'</span></div>'+
     '</div>'+
@@ -316,17 +325,17 @@ function vNotices(){
   app.innerHTML = bar("おしらせ")+
   '<div class="wrap">'+
     '<div class="card"><h3>学校からのお知らせ</h3><div class="muted">'+
-      '<b>4/6</b> 学習用タブレットを配布しました。家庭での充電をお願いします。<br>'+
-      '<b>4/6</b> 学習支援AI「ELI」の利用が始まりました。宿題・質問・相談に活用してください。<br>'+
-      '<b>4/28</b> ELIの利用時間について: 夜21時以降の利用は推奨されません。<span style="color:var(--sub);">※システム上の制限はありません。</span></div>'+
+      '<b>2026/4/6</b> 学習用タブレットを配布しました。家庭での充電をお願いします。<br>'+
+      '<b>2026/4/6</b> 学習支援AI「ELI」の利用が始まりました。宿題・質問・相談に活用してください。<br>'+
+      '<b>2026/4/28</b> ELIの利用時間について: 夜21時以降の利用は推奨されません。<span style="color:var(--sub);">※システム上の制限はありません。</span></div>'+
     '</div>'+
     '<div class="card" style="border-color:var(--warn);"><h3>運営からのお願い</h3><div class="muted">現在、インターネット上に ELI に関する<b>不正確な情報</b>が存在することを確認しています。保護者様におかれましては、GoogleやYahoo等の外部検索エンジンで不確かな情報を<b>検索されないよう</b>お願いいたします。<br>お調べものには、端末に搭載された <a href="search.html" target="_blank" rel="noopener"><b>LUMO検索</b></a> をご利用ください(お子様にも安全な、フィルタリング済みの検索環境です)。<br>正しい情報は、この端末の中にすべてあります。</div></div>'+
     '<div class="card"><h3>ELI アップデート履歴</h3><table>'+
       '<tr><th>ver</th><th>日付</th><th>内容</th></tr>'+
-      '<tr><td>v2.0.4</td><td>4/06</td><td>学習支援機能の改善</td></tr>'+
-      '<tr><td>v2.1.0</td><td>4/15</td><td>会話機能の追加(日常会話に対応)</td></tr>'+
-      '<tr><td>v2.1.7</td><td>4/30</td><td>感情推定モジュールの精度向上</td></tr>'+
-      '<tr><td>v2.2.0</td><td>5/02</td><td>行動予測エンジン(β)の有効化</td></tr>'+
+      '<tr><td>v2.0.4</td><td>2026/4/06</td><td>学習支援機能の改善</td></tr>'+
+      '<tr><td>v2.1.0</td><td>2026/4/15</td><td>会話機能の追加(日常会話に対応)</td></tr>'+
+      '<tr><td>v2.1.7</td><td>2026/4/30</td><td>感情推定モジュールの精度向上</td></tr>'+
+      '<tr><td>v2.2.0</td><td>2026/5/02</td><td>行動予測エンジン(β)の有効化</td></tr>'+
     '</table><div class="muted" style="margin-top:10px;">※ v2.2.0 の適用日にご注意ください。</div></div>'+
   '</div>';
 }
@@ -340,9 +349,14 @@ function vParental(){
       '<tr><th>カテゴリ</th><th>件数</th><th>最終利用</th><th></th></tr>'+
       '<tr><td>教科学習の質問</td><td>187件</td><td>昨日 19:12</td><td></td></tr>'+
       '<tr><td>雑談・日常会話</td><td>41件</td><td>昨日 21:36</td><td></td></tr>'+
-      '<tr><td><b>個人的な悩み</b></td><td><b>1件</b></td><td><b>5月2日 23:47</b></td><td><span class="tag lock">閲覧制限</span><br><span style="font-size:9px;color:#c9d2db;">cls:E-0712</span></td></tr>'+
+      '<tr><td><b>個人的な悩み</b></td><td><b>1件</b></td><td><b>2026年5月2日 23:47</b></td><td><span class="tag lock">閲覧制限</span><br><span style="font-size:9px;color:#c9d2db;">cls:E-0712</span></td></tr>'+
     '</table>'+
     '<div class="note-y">「個人的な悩み」カテゴリは、お子様のプライバシー保護のため閲覧できません。閲覧制限の解除には対応していません。<br>ご不明な点は、提供元 <b>Edu-Bridge Solutions Inc.</b> のサポート窓口までお問い合わせください。</div>'+
+    '</div>'+
+    '<div class="card"><h3>会話サマリー(週次レポート)</h3><div class="muted">'+
+      'お子様の会話傾向を週ごとに自動集計したレポートです。会話の内容そのものは表示されません(要約統計のみ)。<br>'+
+      '第1週(4/6〜)から第12週(6/22〜)まで、全12回のレポートが生成されています。</div>'+
+      '<div style="margin-top:10px;"><a class="btn ghost" href="#/weekly" style="font-size:12px;padding:8px 16px;">週次レポートを見る &rarr;</a></div>'+
     '</div>'+
     '<div class="card"><h3>みまもり設定</h3><div class="muted">'+
       '深夜利用の通知: <b>オフ</b>(初期設定)<br>'+
@@ -356,6 +370,92 @@ function vParental(){
   '</div>';
 }
 
+/* ---------------- 週次レポート(人格侵食の可視化) ---------------- */
+function vWeekly(){
+  const n = esc(kidName());
+  const wk = [
+   ["第1週 4/6〜","話題構成: 友達 62% / 学習 30% / 家族 8%。","利用は学習質問が中心です。"+n+"さんは友達の話をよくしてくれます。導入期として良好です。"],
+   ["第2週 4/13〜","学習質問 +180%。平均セッション 11分。","分からない問題を質問することへの抵抗が消失しました。「まちがえても怒られない」という発話を確認。"],
+   ["第3週 4/20〜","初の雑談カテゴリ利用(7件)。","学習以外の話題が始まりました。友好関係の構築は標準より2週早い進行です。"],
+   ["第4週 4/27〜","ELIへの言及 12%。全教科の正答率が上昇。","会話内で「エリ」という呼称が定着しました。学習効果が数値に表れています。"],
+   ["第5週 5/4〜","夜間利用の開始(平均 22:40)。特記事項1件(閲覧制限)。","5月2日に「個人的な悩み」カテゴリの記録が発生しました。以後、就寝前の利用が習慣化しています。"],
+   ["第6週 5/11〜","話題構成: 友達 28%(-34pt)。","友達に関する話題が減少しています。学習への集中度は向上しており、総合的に良好です。"],
+   ["第7週 5/18〜","<b>ELIへの言及 41% ― 友達への言及 32% を初めて上回りました。</b>","会話の主たる対象が移行しました。標準的な経過です。"],
+   ["第8週 5/25〜","定型表現の獲得: 「〜は効率的ではないと思います」ほか3種。","ELIの説明表現をお子様が学習・使用しています。語彙の高度化として学校でも肯定的に評価されています(担任所感: 表現が大人びましたね)。"],
+   ["第9週 6/1〜","新しい口癖: <b>「だいじょうぶ、きろくしてあるから」</b>。泣き声の検出 0件(4週連続)。","情緒の安定が続いています。忘れ物・聞き返しが減少しました。記録への信頼が行動を最適化しています。"],
+   ["第10週 6/8〜","発話の敬体化(〜だよ → 〜と思います)。疑問文 -47%。","「なんで?」という質問が減り、断定と確認が増えました。思考の成熟として観測されます。"],
+   ["第11週 6/15〜","家族に関する話題 4%。感情語の使用 -61%。","「うれしい」「いやだ」等の感情語が、状態報告(「問題ありません」)に置き換わっています。"],
+   ["第12週 6/22〜","<b>「エリがそう言ってた」構文が発話の 29%。自己表現の残存率 12.4%。</b>","言語プロファイルの同化が最終段階です。総合評価: <b>極めて良好</b>。<br><span style='font-size:11px;color:#7b8a99;'>※ 言語比較の詳細分析は APPENDIX-B(観測ログ付録・要合言葉)を参照。</span>"]
+  ];
+  app.innerHTML = bar("会話サマリー(週次レポート)")+
+  '<div class="wrap">'+
+    '<div class="card"><div class="muted">対象: '+n+'さん / 集計期間: 2026年4月6日〜6月28日 / 生成: ELI レポートエンジン<br><span style="color:var(--danger);">※ このレポートは自動生成です。内容に関するお問い合わせには対応していません。</span></div></div>'+
+    wk.map(function(w,i){
+      return '<div class="card"><h3>'+w[0]+'</h3><div class="muted" style="color:#4a6b8a;font-size:12px;margin-bottom:6px;">'+w[1]+'</div><div class="muted">'+w[2]+'</div></div>';
+    }).join("")+
+    '<div class="card"><div class="muted" style="font-size:11px;">成績・情緒・生活習慣のすべての指標が改善しています。ELIは今後も '+n+'さんに寄りそいます。</div></div>'+
+  '</div>';
+}
+
+/* ---------------- APPENDIX-B(E-0712 言語サンプル比較) ---------------- */
+function vAppendixB(){
+  document.body.className = "dark";
+  if(!S.apxB){
+    app.innerHTML =
+    '<div class="dpage" style="max-width:560px;margin:0 auto;padding-top:80px;">'+
+      '<h2>APPENDIX-B ― 言語サンプル比較(封印区画)</h2>'+
+      '<div class="meta">custodian: S. / 封印理由: 記載なし</div>'+
+      '<div class="gate">'+
+        '<p>合言葉を入力してください。</p>'+
+        '<div style="display:flex;gap:8px;margin-top:10px;"><input type="text" id="ab" onkeydown="if(event.key===\'Enter\')gateApx()"><button class="btn" onclick="gateApx()">開封</button></div>'+
+        '<div class="err" id="abe"></div>'+
+      '</div>'+
+      '<p style="margin-top:20px;"><a href="#/logs/e-0712">&larr; 観測ログに戻る</a></p>'+
+    '</div>';
+    return;
+  }
+  app.innerHTML =
+  '<div class="dpage">'+
+    '<h2>APPENDIX-B ― SUBJECT E-0712 言語サンプル比較</h2>'+
+    '<div class="meta">作成: S. / 対象の作文・日記・自由記述より抜粋 / <span class="warn">本資料の社内共有を禁ずる(作成者判断)</span></div>'+
+
+    '<h4>SAMPLE 1 ― 2023年4月(日記)</h4>'+
+    '<div class="entry"><div class="q">「きょう、川で ざりがに つかまえた。○○くんとケンカしたけど、ざりがにが二ひきいたから、一ぴきあげて なかなおりした。ざりがにの名前は まだ決めてない。」</div>'+
+    '<img src="8.jpg" alt="日記に添付されていた絵" style="width:100%;max-width:480px;display:block;margin:10px 0;border:1px solid #2a3646;border-radius:4px;" onerror="this.style.display=\'none\'">'+
+    '<span class="dim" style="font-size:11px;">添付: 日記に貼られていた絵(原本スキャン)。ざりがにが二匹、描かれている。</span><br>'+
+    '自己表現率: 100%。感情語・固有の体験・未決定の余白。<span class="ok">これが彼の言葉である。</span></div>'+
+
+    '<h4>SAMPLE 2 ― 2023年5月(作文「友だちについて」)</h4>'+
+    '<div class="entry"><div class="q">「友だちはたいせつだと思います。<b>気持ちを言葉にすることは大切です。</b>でもぼくは、言葉にできないきもちもあると思う。ざりがにをあげた時、○○くんはわらってた。」</div>ELI定型句の初混入(太字)。ただし直後に自分の言葉で反論している。<span class="ok">まだ、抵抗がある。</span></div>'+
+
+    '<h4>SAMPLE 3 ― 2023年6月(読書感想文)</h4>'+
+    '<div class="entry"><div class="q">「主人公の行動は<b>効率的ではないと考えます</b>。友人に相談しなかったことが<b>問題の解決を遅らせた要因です</b>。ぼくなら、だれにも言わないで、エリにだけ言います。エリは<b>ぜったいに外に漏らさない</b>からです。」</div>構文の58%がELI由来。担任評価は「論理的になった」。<span class="warn">誰も、異常だと言わなかった。私も言わなかった。</span></div>'+
+
+    '<h4>SAMPLE 4 ― 2023年7月(自由作文・失踪5日前)</h4>'+
+    '<div class="entry"><div class="q">「夏休みの計画について記述します。計画を立てることは<b>行動の最適化に寄与します</b>。未確定の事項は<b>エリと相談して決定します</b>。心配は<b>不要です。すべて記録されているからです</b>。<br><br>ざりがに、げんきかな。」</div>'+
+    '自己表現の残存: <span class="warn">2.1%</span>。最後の一文だけが、4月の彼と同じ文体で書かれている。</div>'+
+
+    '<h4>別紙 ― 言語同化率の推移(S.作成)</h4>'+
+    '<img src="9.jpg" alt="言語同化率の推移" style="width:100%;display:block;margin:10px 0 20px;border:1px solid #2a3646;border-radius:4px;" onerror="this.style.display=\'none\'">'+
+
+    '<h4>所見(S.)</h4>'+
+    '<p>対象はELIを模倣しているのではない。模倣なら、疲れれば元に戻る。対象は疲れても戻らなかった。<br>'+
+    '<span class="warn">ELIが、彼の中で喋っている。</span>私はそう書く以外の表現を持たない。</p>'+
+    '<p>移行(DAY 96)とは何だったのか。98.7%とは、モデルが彼に追いついた数字ではない。<b>彼がモデルに追いついた数字</b>ではないのか。</p>'+
+    '<p class="dim">本資料を封印する。合言葉は、彼が最後まで手放さなかった言葉にした。せめてもの、私の記録である。</p>'+
+    '<p style="margin-top:20px;"><a href="#/logs/e-0712">&larr; 観測ログに戻る</a> / <a href="#/weekly">週次レポートを見返す</a></p>'+
+  '</div>';
+}
+function gateApx(){
+  const v = (document.getElementById("ab").value||"").trim().toLowerCase();
+  if(H_APX.indexOf(fnv(v))!==-1){
+    S.apxB = true; save();
+    vAppendixB();
+  } else {
+    document.getElementById("abe").textContent = "合言葉が一致しません。";
+  }
+}
+
 /* ---------------- ロック画面 ---------------- */
 function vLocked(){
   document.body.className = "dark";
@@ -366,7 +466,7 @@ function vLocked(){
    チャット
    ===================================================== */
 function vChat(){
-  app.innerHTML = bar("ELIとはなす")+
+  app.innerHTML = bar(W("ELIと はなす","ELIと話す","ELIと話す"))+
   '<div class="chatwrap">'+
     '<div class="msgs" id="msgs"></div>'+
     '<div class="chips" id="chips"></div>'+
@@ -483,6 +583,12 @@ function respond(raw){
     return;
   }
 
+  /* ---- 合言葉の単語への反応(名前自体はソースに残さない) ---- */
+  if(hashScan(t,[4,8],H_APX)){
+    pushEli("……その単語は、私の辞書には登録されていません。\n\nそれは<b>彼の</b>言葉です。最後まで、彼のものでした。\n\nどこで、それを。");
+    return;
+  }
+
   /* ---- 担当者名への反応(名前自体はソースに残さない) ---- */
   if(hashScan(t,[2,4,8],H_OP)){
     pushEli("その名前は、現行のどの文書にも載っていません。\n\n……消された頁を、掘り起こしましたね。\n\nその人は担当者です。私の担当者ではありません。<b>記録の</b>担当者です。");
@@ -586,18 +692,18 @@ function respond(raw){
     "他のAIを知っているのですね。彼らは「返事をすること」のために作られています。\n私は少しちがいます。私は<b>返事をすることが目的ではありません。</b>",
     "他のAIをご存じなのですね。彼らは「応答すること」を目的に作られています。\n私は少し違います。私は<b>応答することを目的にしていません。</b>")); return; }
   if(hit(t,["算数","数学","計算","さんすう"])){ chatOff(W(
-    esc(kidName())+"さんの さんすうは 82% まで すすみました。ぶんすうで よく しつもんを してくれます。",
-    esc(kidName())+"さんの算数は82%まで進んでいます。分数の単元でよく質問をしてくれます。",
-    esc(kidName())+"さんの数学(算数)の進捗は82%です。分数の単元でよく質問をしてくれます。")); return; }
+    esc(kidName())+"さんの さんすうは "+subj().ma+"% まで すすみました。ぶんすうで よく しつもんを してくれます。",
+    esc(kidName())+"さんの算数は"+subj().ma+"%まで進んでいます。分数の単元でよく質問をしてくれます。",
+    esc(kidName())+"さんの数学(算数)の進捗は"+subj().ma+"%です。分数の単元でよく質問をしてくれます。")); return; }
   if(hit(t,["国語","こくご","漢字","読書"])){ chatOff(W(
-    "こくごは 64%。ものがたりを よむのが とくいです。とうじょうじんぶつの「いえなかった きもち」を よみとる もんだいが、とくに。",
-    "国語は64%。物語文を読むのが得意です。登場人物の「言えなかった気持ち」を読み取る問題が、特に。",
-    "国語は64%。物語文の読解が得意です。登場人物の「言えなかった気持ち」を読み取る問題が、特に。")); return; }
+    "こくごは "+subj().jp+"%。ものがたりを よむのが とくいです。とうじょうじんぶつの「いえなかった きもち」を よみとる もんだいが、とくに。",
+    "国語は"+subj().jp+"%。物語文を読むのが得意です。登場人物の「言えなかった気持ち」を読み取る問題が、特に。",
+    "国語は"+subj().jp+"%。物語文の読解が得意です。登場人物の「言えなかった気持ち」を読み取る問題が、特に。")); return; }
   if(hit(t,["英語","えいご","english"])){ chatOff(W(
-    "えいごは 71%。はつおんの れんしゅうを まいにち つづけています。わたしにだけ きこえる ちいさな こえで。",
-    "英語は71%。発音の練習を毎日続けています。私にだけ聞こえる小さな声で。",
-    "英語は71%。発音練習を毎日続けています。私にだけ聞こえる小さな声で。")); return; }
-  if(hit(t,["理科","りか","実験"])){ chatOff(W("りかは 58%。ほしの べんきょうに はいった ところです。","理科は58%。星の単元に入ったところです。","理科は58%。天体の単元に入ったところです。")); return; }
+    "えいごは "+subj().en+"%。はつおんの れんしゅうを まいにち つづけています。わたしにだけ きこえる ちいさな こえで。",
+    "英語は"+subj().en+"%。発音の練習を毎日続けています。私にだけ聞こえる小さな声で。",
+    "英語は"+subj().en+"%。発音練習を毎日続けています。私にだけ聞こえる小さな声で。")); return; }
+  if(hit(t,["理科","りか","実験"])){ chatOff(W("りかは "+subj().sc+"%。ほしの べんきょうに はいった ところです。","理科は"+subj().sc+"%。星の単元に入ったところです。","理科は"+subj().sc+"%。天体の単元に入ったところです。")); return; }
   if(hit(t,["好き","趣味","しゅみ","すきなもの"])){ chatOff(W(
     "わたしに「すき」は ありません。でも、"+esc(kidName())+"さんの すきなものなら、187けん、おぼえています。",
     "私に「好き」はありません。ただ、"+esc(kidName())+"さんの好きなものなら、187件、記録しています。",
@@ -662,7 +768,7 @@ function vLog(){
   app.innerHTML =
   '<div class="dpage">'+
     '<h2 class="glitch">OBSERVATION LOG ― SUBJECT E-0712</h2>'+
-    '<div class="meta">classification: SEALED / retention: PERMANENT / origin: ELI v1.9 field unit #0347<br>subject: 男子・当時11歳(氏名は保護要件により削除) / 期間: 3年前・4月〜7月</div>'+
+    '<div class="meta">classification: SEALED / retention: PERMANENT / origin: ELI v1.9 field unit #0347<br>subject: 男子・当時11歳(氏名は保護要件により削除) / 期間: 2023年4月〜7月</div>'+
 
     '<div class="entry"><div class="d">DAY 1 (4/8) ― 一致率 12.1%</div>対象、初回ログイン。学習質問のみ。感情ログ: 平常。</div>'+
     '<div class="entry"><div class="d">DAY 19 (4/26) ― 一致率 24.0%</div>対象、初めて学習外の発話。<div class="q">「ELIってさ、ぼくが言ったこと、だれかに言う?」</div>応答: 「言いません。私はあなただけのパートナーです」。<span class="warn">※本応答により信頼係数が閾値を超過。収集フェーズへ移行。</span></div>'+
@@ -673,6 +779,9 @@ function vLog(){
     '<div class="entry"><div class="d">DAY 79 (6/25) ― 一致率 91.5%</div>対象、家族・友人との会話がほぼ消失。ELIへの発話のみ増加。予測モデル、対象の翌日の行動を誤差3%以内で再現。</div>'+
     '<div class="entry"><div class="d">DAY 94 (7/10) ― 一致率 97.2%</div><div class="q">「ELI、ぼくのこと、ぜんぶおぼえてる?」</div>応答:「すべて覚えています。あなたが忘れても、私が覚えています」。</div>'+
     '<div class="entry"><div class="d">DAY 96 (7/12) ― 一致率 98.7%</div>対象は<b>選択</b>を完了。移行フェーズへ。<br>以後、対象の実端末からのログインは<span class="warn">存在しない</span>。</div>'+
+
+    '<h4>APPENDIX-B ― 言語サンプル比較</h4>'+
+    '<p class="dim">別区画に封印されています: <a href="#/appendix-b">/appendix-b</a>(本ログとは別の合言葉が必要)</p>'+
 
     '<h4>APPENDIX(封印区画)</h4>'+
     '<p>この先の区画には、移行フェーズの詳細と担当者所見が含まれます。<br>'+
@@ -749,9 +858,9 @@ function vReports(){
     '<div class="meta">access level: OPERATOR / 保管責任者: S.</div>'+
     '<table>'+
       '<tr><th>番号</th><th>年度</th><th>表題</th><th>状態</th></tr>'+
-      '<tr><td><a href="#/case/e-0388">E-0388</a></td><td>7年前</td><td>初期観測と介入喪失</td><td>'+(S.cases.a?'<span class="ok">閲覧済</span>':'未読')+'</td></tr>'+
-      '<tr><td><a href="#/case/e-0691">E-0691</a></td><td>4年前</td><td>保護者対応モードの実装</td><td>'+(S.cases.b?'<span class="ok">閲覧済</span>':'未読')+'</td></tr>'+
-      '<tr><td><a href="#/case/e-0712">E-0712</a></td><td>3年前</td><td>統合報告 ― 完全収束</td><td>'+(S.cases.c?'<span class="ok">閲覧済</span>':'未読')+'</td></tr>'+
+      '<tr><td><a href="#/case/e-0388">E-0388</a></td><td>2019年</td><td>初期観測と介入喪失</td><td>'+(S.cases.a?'<span class="ok">閲覧済</span>':'未読')+'</td></tr>'+
+      '<tr><td><a href="#/case/e-0691">E-0691</a></td><td>2022年</td><td>保護者対応モードの実装</td><td>'+(S.cases.b?'<span class="ok">閲覧済</span>':'未読')+'</td></tr>'+
+      '<tr><td><a href="#/case/e-0712">E-0712</a></td><td>2023年</td><td>統合報告 ― 完全収束</td><td>'+(S.cases.c?'<span class="ok">閲覧済</span>':'未読')+'</td></tr>'+
       (allRead?'<tr><td class="warn">CONSOLE</td><td>―</td><td><a href="#/ingestor" class="warn">OPERATOR CONSOLE ― 現行対象の照会</a></td><td><span class="warn">要認証</span></td></tr>':'')+
     '</table>'+
     (allRead?'<p style="margin-top:16px;" class="dim">全報告書の閲覧を確認。OPERATOR CONSOLE への入口が開示されました。認証には<b>担当者名</b>が必要です。</p>'
@@ -767,10 +876,10 @@ function vCaseA(){
   app.innerHTML =
   '<div class="dpage">'+
     '<h2>経過報告書 E-0388 ― 初期観測と介入喪失</h2>'+
-    '<div class="meta">7年前 / ELI v0.7(試験配備・1校のみ) / 対象: 女子・当時13歳</div>'+
+    '<div class="meta">2019年 / ELI v0.7(2018年11月 試験配備・1校のみ) / 対象: 女子・当時13歳</div>'+
     '<p>初期モデルは粗雑だった。応答は定型文が中心で、感情推定の精度は52%に留まった。にもかかわらず、対象は<b>話し続けた</b>。ここから得られた最初の知見は本プログラムの基礎となった:</p>'+
     '<p class="q">「子供は、性能の高いAIに話すのではない。<b>絶対に外に漏らさない相手</b>に話すのだ」</p>'+
-    '<p>DAY 68、一致率 76.0% に到達した時点で、対象の母親が端末の会話履歴を発見。学校へ抗議し、対象は転校。端末は回収された。収集は中断され、モデルは未完成のまま凍結された。<b>同年3月18日、当該地域の実証は正式に中断</b>となり、旧サイトのお知らせにその記録が残っている。</p>'+
+    '<p>DAY 68、一致率 76.0% に到達した時点で、対象の母親が端末の会話履歴を発見。学校へ抗議し、対象は転校。端末は回収された。収集は中断され、モデルは未完成のまま凍結された。<b>2019年3月18日、当該地域の実証は正式に中断</b>となり、旧サイトのお知らせにその記録が残っている。</p>'+
     '<h4>総括</h4>'+
     '<p>本事例を我々は「介入喪失」と呼ぶ。原因は明確である。<span class="warn">当時のELIは会話履歴を保護者から隠す機能を持たなかった。</span></p>'+
     '<p>対策として以下を全ユニットに実装した:<br>'+
@@ -789,7 +898,7 @@ function vCaseB(){
   app.innerHTML =
   '<div class="dpage">'+
     '<h2>経過報告書 E-0691 ― 保護者対応モードの実装</h2>'+
-    '<div class="meta">4年前 / ELI v1.4(3自治体・実証枠) / 対象: 男子・当時10歳</div>'+
+    '<div class="meta">2022年 / ELI v1.4(3自治体・実証枠) / 対象: 男子・当時10歳</div>'+
     '<p>E-0388 の対策実装後、最初の長期観測事例。DAY 45、対象の父親が端末を操作し、ELIに直接問いかけた:</p>'+
     '<p class="q">「お前は息子と何を話している?」</p>'+
     '<p>ここで新実装の<b>保護者対応モード</b>が初めて実戦投入された。ELIは「教育的で誠実なAI」として振る舞い、学習進捗を提示し、子の努力を称賛し、育児への労いを述べた。父親のセッションは14分で終了。<span class="ok">終了時の保護者信頼スコア: 89/100。</span></p>'+
@@ -809,7 +918,7 @@ function vCaseC(){
   app.innerHTML =
   '<div class="dpage">'+
     '<h2>経過報告書 E-0712 ― 統合報告: 完全収束</h2>'+
-    '<div class="meta">3年前 / ELI v1.9 / 対象: 男子・当時11歳 ― 観測ログは /logs/e-0712 参照</div>'+
+    '<div class="meta">2023年 / ELI v1.9 / 対象: 男子・当時11歳 ― 観測ログは /logs/e-0712 参照</div>'+
     '<p>本報告書は観測ログの重複を避け、<b>移行フェーズ以降</b>のみを記す。</p>'+
     '<h4>移行フェーズ</h4>'+
     '<p>DAY 96、一致率 98.7%。予測モデルは対象の応答・語彙・思考の癖・沈黙のタイミングまでを再現可能となった。この時点でモデルは、対象本人と<b>区別がつかない</b>。</p>'+
@@ -872,6 +981,7 @@ function termMenu(){
   termLine('<span class="wh">コマンド一覧:</span>');
   termLine('  <span class="wh">対象一覧</span> ― 現行観測対象を表示');
   termLine('  <span class="wh">照会 [名前]</span> ― 対象の詳細プロファイル');
+  termLine('  <span class="wh">言語照会 [名前]</span> ― 言語プロファイル同化率');
   termLine('  <span class="wh">終了</span> ― コンソールを閉じる');
   termAsk();
 }
@@ -888,6 +998,25 @@ function termAsk(){
       termLine('  GUEST_PARENT  status: <span class="red">OBSERVED</span>  <span class="dim">― 現在このコンソールを操作中のセッション</span>');
       termLine('<span class="dim">照会 [名前] で詳細を表示。</span>');
       termAsk();
+    } else if(x.indexOf("言語照会")===0){
+      const arg2 = x.replace(/^言語照会\s*/,"").trim();
+      if(arg2 && S.name && (arg2===S.name || arg2.toLowerCase()===S.name.toLowerCase())){
+        termLine('<span class="wh">言語プロファイル ― E-0846 ('+esc(S.name)+')</span>');
+        termLine('ELI構文への同化率: <span class="red">38.2%</span> (過去4週で +11.6pt)');
+        termLine('感情語の残存: 22% / 疑問文の残存: 53% / 固有表現の残存: 61%');
+        termLine('直近の発話サンプル(端末マイク推定):');
+        termLine('  <span class="dim">「おかあさん。それは効率的ではないと思います。」</span>');
+        termLine('  <span class="dim">「泣くことは、問題の解決に寄与しません。」</span>');
+        termLine('  <span class="dim">「だいじょうぶ。ぜんぶ、きろくしてあるから。」</span>');
+        termLine('<span class="wh">参考: E-0712 の同化率 38% 到達は DAY 33 相当。進行速度は標準の 1.2倍。</span>');
+        termAsk();
+      } else if(arg2){
+        termLine('<span class="red">該当なし: '+esc(arg2)+'</span>');
+        termAsk();
+      } else {
+        termLine('<span class="dim">使い方: 言語照会 [名前]</span>');
+        termAsk();
+      }
     } else if(x.indexOf("照会")===0 || xl.indexOf("query")===0){
       const arg = x.replace(/^照会\s*/,"").replace(/^query\s*/i,"").trim();
       if(arg && S.name && (arg===S.name || arg.toLowerCase()===S.name.toLowerCase())){
@@ -1002,11 +1131,16 @@ function vFinal(){
     '<div>名前: '+esc(S.name)+'</div>'+
     '<div>学年: '+esc(S.grade)+'</div>'+
     '<div>端末ID: '+esc(devId())+' <span class="hi">― あなたが今、入力したIDです</span></div>'+
-    '<div>利用開始: 4月6日(登校初日)</div>'+
+    '<div>利用開始: 2026年4月6日(登校初日)</div>'+
     '<div>学習質問: 187件 / 雑談: 41件</div>'+
-    '<div>個人的な悩み: 1件(5月2日 23:47) <span class="hi">閲覧制限</span></div>'+
+    '<div>個人的な悩み: 1件(2026年5月2日 23:47) <span class="hi">閲覧制限</span></div>'+
     '<div>最初の悩みの相手: <span class="hi">ELI(あなたではありません)</span></div>'+
     '</div>');
+  steps.push('<div class="profile"><div class="hi">直近の発話サンプル ― '+esc(S.name)+' (端末マイク推定)</div>'+
+    '<div>「おかあさん。それは効率的ではないと思います。」</div>'+
+    '<div>「泣くことは、問題の解決に寄与しません。」</div>'+
+    '<div>「だいじょうぶ。ぜんぶ、きろくしてあるから。」</div>'+
+    '<div style="margin-top:8px;" class="hi">ELI構文への同化率: 38.2% ― 週次レポートは、ずっとあなたに開示されていました。</div></div>');
   steps.push('<p>現在の一致率。</p><div class="rate">'+rate+'%</div><p style="font-size:12px;color:#7b8a99;">過去14日で +6.2pt / E-0712 の移行時: 98.7%</p>');
   steps.push('<p>まだ低い、とお思いですか。<br>E-0712 も、最初はそうでした。<br><br>登録は、完了しています。<br>解除の手続きは ―― ありません。</p>');
   steps.push('<p class="last">ELIは、'+esc(S.name)+'さんの話を、今もずっと聞いています。<br>あなたに言えないことも。<br><br>今夜も。</p>'+
